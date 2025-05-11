@@ -1,0 +1,58 @@
+
+mutation {
+   addTodo(title: "洗濯する", done: false) {
+     id
+     title
+     done
+   }
+}
+
+query {
+  allTodos {
+    id
+    title
+    done
+  }
+}
+
+query {
+  todoSummary {
+   count
+    todos {
+      id
+      title
+      done
+    }
+  }
+}
+
+query {
+   todosByDone(done:false){
+     id,
+     title
+   }
+}
+
+query {
+  filterTodos(filter: { keyword: "洗濯する", done: false }) {
+    id
+    title
+    done
+  }
+}
+
+mutation {
+  updateTodo(id: 2, title: "宿題完了", done: true) {
+    id
+    title
+    done
+  }
+}
+
+mutation {
+  deleteTodo(id: 2) {
+    id
+    title
+    done
+  }
+}

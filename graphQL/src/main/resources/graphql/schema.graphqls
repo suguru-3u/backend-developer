@@ -1,0 +1,39 @@
+# GraphQLのスキーマは、サーバーがクライアントに提供するデータ構造とAPIの操作を定義している。
+
+# クエリやミューテーションで扱うオブジェクトの「設計図」
+type Todo {
+    id: Int
+    title: String
+    done: Boolean
+}
+
+
+type TodoSummary {
+    count: Int
+    todos: [Todo]
+}
+
+# Interfaceは、異なるTypeが共有するFieldを定義するために使用されます。
+# Interfaceを実装するTypeは、そのInterfaceのすべてのFieldを含む必要があります。
+input TodoFilterInput {
+    keyword: String
+    done: Boolean
+}
+
+# 参照系の定義
+type Query {
+    hello: String
+    helloSecond: String
+    allTodos: [Todo]
+    todoSummary: TodoSummary
+    todosByDone(done: Boolean!): [Todo]
+    filterTodos(filter: TodoFilterInput): [Todo]
+    me: String
+}
+
+# 登録・更新・削除の定義
+type Mutation {
+    addTodo(title: String!, done: Boolean!): Todo
+    updateTodo(id: Int!, title: String, done: Boolean): Todo
+    deleteTodo(id: Int!): Todo
+}
