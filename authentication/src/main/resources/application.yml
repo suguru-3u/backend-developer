@@ -1,0 +1,33 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 設定した値を入れてね
+            client-secret: 設定した値を入れてね
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          google:
+            issuer-uri: https://accounts.google.com
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/sample?serverTimezone=Asia/Tokyo
+    username: sample_user
+    password: sample_pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.web.access: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+
+
