@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    image: nginx:alpine
+    volumes:
+      - ./app:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx-cache:/var/cache/nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+
+volumes:
+  nginx-cache:
