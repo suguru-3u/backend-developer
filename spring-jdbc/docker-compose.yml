@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:latest # MySQLの最新イメージを使用
+    container_name: spring-jdbc-db
+    environment:
+      MYSQL_ROOT_PASSWORD: sample_root_pass  # ルートユーザーのパスワード
+      MYSQL_DATABASE: sample                 # 起動時に作られるDB名
+      MYSQL_USER: my_user                # 任意のユーザー
+      MYSQL_PASSWORD: my_password            # 上記ユーザーのパスワード
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql   # データ永続化するために必要。コンテナ内の/var/lib/mysqlがホスト内（Docker内）db_dataに保存される
+      - ./init:/docker-entrypoint-initdb.d # init/init.sql に任意の初期データを書いておくと、コンテナ起動時に自動で実行される
+
+volumes:
+  db_data:
