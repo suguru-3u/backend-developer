@@ -4,14 +4,16 @@ import com.example.spring_jdbc.domain.User
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.jdbc.core.queryForObject
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.sql.ResultSet
 
 @Repository
 class SampleRepository(
     private val jdbcTemplate: JdbcTemplate,
-    private val namedParameterJdbcTemplate: NamedParameterJdbcTemplate
+    private val namedParameterJdbcTemplate: NamedParameterJdbcTemplate,
+    private val transactionTemplate: TransactionTemplate // configクラスにトランザクションの設定を細かく記述したりすることができるらしい。トランザクションの分離や伝播など。
 ) {
     fun save(user: User): Int {
         val sql = "INSERT INTO users (name, email) VALUES (?, ?)"
@@ -27,7 +29,7 @@ class SampleRepository(
     // 名前付きバインド変数
     fun find2(id: Int): MutableMap<String, Any> {
         val sql = "SELECT name, email FROM users WHERE id = :id"
-        val params = mapOf<String, Int>("id" to id)
+        val params = mapOf("id" to id)
         return namedParameterJdbcTemplate.queryForMap(sql, params)
     }
 
@@ -40,6 +42,23 @@ class SampleRepository(
                 rs.getString("name"),
                 rs.getString("email")
             )
+        }
+    }
+
+    // 宣言的トランザクション：アノテーションを付与することでトランザクションを実行することができる（クラスに付与することもできる）
+    @Transactional
+    fun update() {
+        val sql = "UPDATE users SET name = ?, email = ? WHERE id = ?"
+        val params = mapOf("name" to "updated_name", "email" to "update_email", "id" to 1)
+        jdbcTemplate.update(sql, params)
+    }
+
+    // 明示的トランザクション：TransactionTemplateを利用してトランザクションを実行することもできる
+    fun update2() {
+        transactionTemplate.execute {
+            val sql = "UPDATE users SET name = ?, email = ? WHERE id = ?"
+            val params = mapOf("name" to "updated_name", "email" to "update_email", "id" to 1)
+            jdbcTemplate.update(sql, params)
         }
     }
 
