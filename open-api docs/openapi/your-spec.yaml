@@ -1,0 +1,228 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: リアルタイム・プロジェクト管理API
+  description: >-
+    このファイルはAPI仕様の整理のみを行い、詳細は分割ファイルで管理します。
+    ※本APIの通信はHTTPS（TLS）で行うことを必須とします。
+paths:
+  /api/projects:
+    get:
+      summary: プロジェクト一覧取得
+      description: プロジェクトの一覧を取得します
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: プロジェクト一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+        '401':
+          description: 認証エラー
+        '403':
+          description: 権限エラー
+        '500':
+          description: サーバーエラー
+    post:
+      summary: プロジェクト新規作成
+      description: 新しいプロジェクトを作成します
+      security:
+        - JWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+      responses:
+        '200':
+          description: 作成したプロジェクト
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: リクエスト不正
+        '401':
+          description: 認証エラー
+        '403':
+          description: 権限エラー
+        '500':
+          description: サーバーエラー
+  /api/projects/{projectId}:
+    get:
+      summary: プロジェクト詳細取得
+      description: 指定したプロジェクトの詳細を取得します
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: プロジェクト詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '401':
+          description: 認証エラー
+        '403':
+          description: 権限エラー
+        '404':
+          description: プロジェクトが見つかりません
+        '500':
+          description: サーバーエラー
+    put:
+      summary: プロジェクト更新
+      description: 指定したプロジェクトを更新します
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdateRequest'
+      responses:
+        '200':
+          description: 更新後のプロジェクト
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: リクエスト不正
+        '401':
+          description: 認証エラー
+        '403':
+          description: 権限エラー
+        '404':
+          description: プロジェクトが見つかりません
+        '500':
+          description: サーバーエラー
+    delete:
+      summary: プロジェクト削除
+      description: 指定したプロジェクトを削除します
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: 削除成功（レスポンスなし）
+        '401':
+          description: 認証エラー
+        '403':
+          description: 権限エラー
+        '404':
+          description: プロジェクトが見つかりません
+        '500':
+          description: サーバーエラー
+  /api/realtime-notification/stream:
+    get:
+      summary: SSEによるリアルタイム通知ストリーム
+      description: 担当・ウォッチプロジェクトの更新通知をSSEでリアルタイム配信します
+      security:
+        - JWT: [ ]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: assignee
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SSEストリーム
+          headers:
+            Access-Control-Allow-Origin:
+              description: CORS対応。許可するオリジン。
+              schema:
+                type: string
+                example: '*'
+            Authorization:
+              description: JWT認証用。リクエスト時に必要。
+              schema:
+                type: string
+                example: 'Bearer <token>'
+            Cache-Control:
+              description: キャッシュ防止。no-store, no-cache等を設定。
+              schema:
+                type: string
+                example: 'no-store, no-cache'
+          content:
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  event:
+                    type: string
+                    example: projectUpdate
+                  data:
+                    $ref: '#/components/schemas/RealtimeNotification'
+        '401':
+          description: 認証エラー
+        '403':
+          description: 権限エラー
+        '500':
+          description: サーバーエラー
+components:
+  schemas:
+    User:
+      $ref: './openapi/users-schemas.yaml#/User'
+    Error:
+      $ref: './openapi/users-schemas.yaml#/Error'
+    Project:
+      $ref: './openapi/projects-schemas.yaml#/Project'
+    ProjectCreateRequest:
+      $ref: './openapi/projects-schemas.yaml#/ProjectCreateRequest'
+    ProjectUpdateRequest:
+      $ref: './openapi/projects-schemas.yaml'
+    RealtimeNotification:
+      type: object
+      properties:
+        projectId:
+          type: integer
+        projectName:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+        comment:
+          type: string
+        assignee:
+          type: string
+        status:
+          type: string
+        dueDate:
+          type: string
+          format: date
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - JWT: []

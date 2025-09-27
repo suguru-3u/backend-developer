@@ -1,0 +1,13 @@
+version: '3.9'
+services:
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swagger-ui-container
+    ports:
+      - "80:8080"
+    volumes:
+      - ./openapi:/openapi # Mount a local 'openapi' directory
+    environment:
+      SWAGGER_JSON: /openapi/your-spec.yaml # Path to your spec inside the container
+      # Alternatively, use a remote URL:
+      # SWAGGER_JSON_URL: "https://petstore.swagger.io/v2/swagger.json"

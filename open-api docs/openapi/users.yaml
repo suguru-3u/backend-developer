@@ -1,0 +1,39 @@
+paths:
+  /users:
+    get:
+      description: >
+        Returns all users
+      operationId: findUsers
+      parameters:
+        - name: tags
+          in: query
+          description: tags to filter by
+          required: false
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: user response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../openapi/users-schemas.yaml#/User'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../openapi/users-schemas.yaml#/Error'
+
