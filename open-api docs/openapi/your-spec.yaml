@@ -3,226 +3,530 @@ info:
   version: 1.0.0
   title: リアルタイム・プロジェクト管理API
   description: >-
-    このファイルはAPI仕様の整理のみを行い、詳細は分割ファイルで管理します。
-    ※本APIの通信はHTTPS（TLS）で行うことを必須とします。
+    本APIの通信はHTTPS（TLS）で行うことを必須とします。
 paths:
   /api/projects:
-    get:
-      summary: プロジェクト一覧取得
-      description: プロジェクトの一覧を取得します
-      security:
-        - JWT: []
-      responses:
-        '200':
-          description: プロジェクト一覧
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Project'
-        '401':
-          description: 認証エラー
-        '403':
-          description: 権限エラー
-        '500':
-          description: サーバーエラー
-    post:
-      summary: プロジェクト新規作成
-      description: 新しいプロジェクトを作成します
-      security:
-        - JWT: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectCreateRequest'
-      responses:
-        '200':
-          description: 作成したプロジェクト
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Project'
-        '400':
-          description: リクエスト不正
-        '401':
-          description: 認証エラー
-        '403':
-          description: 権限エラー
-        '500':
-          description: サーバーエラー
+    $ref: '#/components/paths/Projects'
   /api/projects/{projectId}:
-    get:
-      summary: プロジェクト詳細取得
-      description: 指定したプロジェクトの詳細を取得します
-      security:
-        - JWT: []
-      parameters:
-        - name: projectId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: プロジェクト詳細
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Project'
-        '401':
-          description: 認証エラー
-        '403':
-          description: 権限エラー
-        '404':
-          description: プロジェクトが見つかりません
-        '500':
-          description: サーバーエラー
-    put:
-      summary: プロジェクト更新
-      description: 指定したプロジェクトを更新します
-      security:
-        - JWT: []
-      parameters:
-        - name: projectId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectUpdateRequest'
-      responses:
-        '200':
-          description: 更新後のプロジェクト
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Project'
-        '400':
-          description: リクエスト不正
-        '401':
-          description: 認証エラー
-        '403':
-          description: 権限エラー
-        '404':
-          description: プロジェクトが見つかりません
-        '500':
-          description: サーバーエラー
-    delete:
-      summary: プロジェクト削除
-      description: 指定したプロジェクトを削除します
-      security:
-        - JWT: []
-      parameters:
-        - name: projectId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: 削除成功（レスポンスなし）
-        '401':
-          description: 認証エラー
-        '403':
-          description: 権限エラー
-        '404':
-          description: プロジェクトが見つかりません
-        '500':
-          description: サーバーエラー
+    $ref: '#/components/paths/ProjectById'
   /api/realtime-notification/stream:
-    get:
-      summary: SSEによるリアルタイム通知ストリーム
-      description: 担当・ウォッチプロジェクトの更新通知をSSEでリアルタイム配信します
-      security:
-        - JWT: [ ]
-      parameters:
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: assignee
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: SSEストリーム
-          headers:
-            Access-Control-Allow-Origin:
-              description: CORS対応。許可するオリジン。
-              schema:
-                type: string
-                example: '*'
-            Authorization:
-              description: JWT認証用。リクエスト時に必要。
-              schema:
-                type: string
-                example: 'Bearer <token>'
-            Cache-Control:
-              description: キャッシュ防止。no-store, no-cache等を設定。
-              schema:
-                type: string
-                example: 'no-store, no-cache'
-          content:
-            text/event-stream:
-              schema:
-                type: object
-                properties:
-                  event:
-                    type: string
-                    example: projectUpdate
-                  data:
-                    $ref: '#/components/schemas/RealtimeNotification'
-        '401':
-          description: 認証エラー
-        '403':
-          description: 権限エラー
-        '500':
-          description: サーバーエラー
+    $ref: '#/components/paths/RealtimeNotificationStream'
+
 components:
+  paths:
+    Projects:
+      get:
+        summary: プロジェクト一覧取得API
+        description: プロジェクトの一覧を取得します
+        parameters:
+          - $ref: '#/components/parameters/CacheControlHeader'
+          - name: category
+            in: query
+            description: カテゴリーで絞り込み
+            required: false
+            schema:
+              type: string
+              description: 登録されているカテゴリー以外の場合、エラーになります
+          - name: team
+            in: query
+            description: チームで絞り込み
+            required: false
+            schema:
+              type: string
+              description: 登録されているチーム以外の場合、エラーになります
+          - name: dueDate
+            in: query
+            description: 期日で絞り込み
+            required: false
+            schema:
+              type: string
+              format: date
+        responses:
+          '200':
+            description: プロジェクト一覧
+            headers:
+              Content-Type:
+                $ref: '#/components/headers/ContentType'
+              Cache-Control:
+                $ref: '#/components/headers/CacheControl'
+              X-Content-Type-Options:
+                $ref: '#/components/headers/xContentTypeOptions'
+              X-XSS-Protection:
+                $ref: '#/components/headers/xXssProtection'
+              X-Frame-Options:
+                $ref: '#/components/headers/xFrameOptions'
+              Strict-Transport-Security:
+                $ref: '#/components/headers/StrictTransportSecurity'
+              Content-Security-Policy:
+                $ref: '#/components/headers/ContentSecurityPolicy'
+              Referrer-Policy:
+                $ref: '#/components/headers/ReferrerPolicy'
+              X-RateLimit-Limit:
+                $ref: '#/components/headers/XRateLimitLimit'
+              X-RateLimit-Remaining:
+                $ref: '#/components/headers/XRateLimitRemaining'
+              X-RateLimit-Reset:
+                $ref: '#/components/headers/XRateLimitReset'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Project'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '429':
+            $ref: '#/components/responses/TooManyRequests'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      post:
+        summary: プロジェクト新規作成API
+        description: 新しいプロジェクトを作成します
+        parameters:
+          - $ref: '#/components/parameters/CacheControlHeader'
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectCreateRequest'
+        responses:
+          '200':
+            description: 作成したプロジェクト
+            headers:
+              Content-Type:
+                $ref: '#/components/headers/ContentType'
+              Cache-Control:
+                $ref: '#/components/headers/CacheControl'
+              X-Content-Type-Options:
+                $ref: '#/components/headers/xContentTypeOptions'
+              X-XSS-Protection:
+                $ref: '#/components/headers/xXssProtection'
+              X-Frame-Options:
+                $ref: '#/components/headers/xFrameOptions'
+              Strict-Transport-Security:
+                $ref: '#/components/headers/StrictTransportSecurity'
+              Content-Security-Policy:
+                $ref: '#/components/headers/ContentSecurityPolicy'
+              Referrer-Policy:
+                $ref: '#/components/headers/ReferrerPolicy'
+              X-RateLimit-Limit:
+                $ref: '#/components/headers/XRateLimitLimit'
+              X-RateLimit-Remaining:
+                $ref: '#/components/headers/XRateLimitRemaining'
+              X-RateLimit-Reset:
+                $ref: '#/components/headers/XRateLimitReset'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Project'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '429':
+            $ref: '#/components/responses/TooManyRequests'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    ProjectById:
+      get:
+        summary: プロジェクト詳細取得API
+        description: 指定したプロジェクトの詳細を取得します
+        parameters:
+          - $ref: '#/components/parameters/CacheControlHeader'
+          - name: projectId
+            in: path
+            required: true
+            schema:
+              type: integer
+        responses:
+          '200':
+            description: プロジェクト詳細
+            headers:
+              Content-Type:
+                $ref: '#/components/headers/ContentType'
+              Cache-Control:
+                $ref: '#/components/headers/CacheControl'
+              X-Content-Type-Options:
+                $ref: '#/components/headers/xContentTypeOptions'
+              X-XSS-Protection:
+                $ref: '#/components/headers/xXssProtection'
+              X-Frame-Options:
+                $ref: '#/components/headers/xFrameOptions'
+              Strict-Transport-Security:
+                $ref: '#/components/headers/StrictTransportSecurity'
+              Content-Security-Policy:
+                $ref: '#/components/headers/ContentSecurityPolicy'
+              Referrer-Policy:
+                $ref: '#/components/headers/ReferrerPolicy'
+              X-RateLimit-Limit:
+                $ref: '#/components/headers/XRateLimitLimit'
+              X-RateLimit-Remaining:
+                $ref: '#/components/headers/XRateLimitRemaining'
+              X-RateLimit-Reset:
+                $ref: '#/components/headers/XRateLimitReset'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Project'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '429':
+            $ref: '#/components/responses/TooManyRequests'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      patch:
+        summary: プロジェクト更新API
+        description: 指定したプロジェクトを更新します
+        parameters:
+          - $ref: '#/components/parameters/CacheControlHeader'
+          - name: projectId
+            in: path
+            required: true
+            schema:
+              type: integer
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectUpdateRequest'
+        responses:
+          '200':
+            description: 更新後のプロジェクト
+            headers:
+              Content-Type:
+                $ref: '#/components/headers/ContentType'
+              Cache-Control:
+                $ref: '#/components/headers/CacheControl'
+              X-Content-Type-Options:
+                $ref: '#/components/headers/xContentTypeOptions'
+              X-XSS-Protection:
+                $ref: '#/components/headers/xXssProtection'
+              X-Frame-Options:
+                $ref: '#/components/headers/xFrameOptions'
+              Strict-Transport-Security:
+                $ref: '#/components/headers/StrictTransportSecurity'
+              Content-Security-Policy:
+                $ref: '#/components/headers/ContentSecurityPolicy'
+              Referrer-Policy:
+                $ref: '#/components/headers/ReferrerPolicy'
+              X-RateLimit-Limit:
+                $ref: '#/components/headers/XRateLimitLimit'
+              X-RateLimit-Remaining:
+                $ref: '#/components/headers/XRateLimitRemaining'
+              X-RateLimit-Reset:
+                $ref: '#/components/headers/XRateLimitReset'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Project'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '429':
+            $ref: '#/components/responses/TooManyRequests'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      delete:
+        summary: プロジェクト削除API
+        description: 指定したプロジェクトを削除します
+        parameters:
+          - $ref: '#/components/parameters/CacheControlHeader'
+          - name: projectId
+            in: path
+            required: true
+            schema:
+              type: integer
+        responses:
+          '204':
+            description: 削除成功（レスポンスなし）
+            headers:
+              Cache-Control:
+                $ref: '#/components/headers/CacheControl'
+              X-Content-Type-Options:
+                $ref: '#/components/headers/xContentTypeOptions'
+              X-XSS-Protection:
+                $ref: '#/components/headers/xXssProtection'
+              X-Frame-Options:
+                $ref: '#/components/headers/xFrameOptions'
+              Strict-Transport-Security:
+                $ref: '#/components/headers/StrictTransportSecurity'
+              Content-Security-Policy:
+                $ref: '#/components/headers/ContentSecurityPolicy'
+              Referrer-Policy:
+                $ref: '#/components/headers/ReferrerPolicy'
+              X-RateLimit-Limit:
+                $ref: '#/components/headers/XRateLimitLimit'
+              X-RateLimit-Remaining:
+                $ref: '#/components/headers/XRateLimitRemaining'
+              X-RateLimit-Reset:
+                $ref: '#/components/headers/XRateLimitReset'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '429':
+            $ref: '#/components/responses/TooManyRequests'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    RealtimeNotificationStream:
+      get:
+        summary: SSEによるリアルタイム通知ストリーム
+        description: 担当・ウォッチプロジェクトの更新通知をSSEでリアルタイム配信します
+        security:
+          - JWT: [ ]
+        parameters:
+          - $ref: '#/components/parameters/CacheControlHeader'
+        responses:
+          '202':
+            description: |
+              接続成功。イベントストリームを開始します。
+              サーバーは `created`,`update` イベントを送信します。  
+              各イベントの `data` フィールドには、以下の `RealtimeNotification` スキーマに準拠したJSONオブジェクトが含まれます。
+              ```
+              event: update
+              data: {"projectId":1,"projectName":"新規開発プロジェクト",...}
+              ```
+            headers:
+              Content-Type:
+                schema:
+                  type: string
+                  example: text/event-stream
+              Connection:
+                schema:
+                  type: string
+                  example: keep-alive
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+  parameters:
+    CacheControlHeader:
+      name: Cache-Control
+      in: header
+      description: キャッシュ制御
+      required: false
+      schema:
+        type: string
+        example: 'no-cache'
+
+  headers:
+    ContentType:
+      description: コンテンツタイプ
+      schema:
+        type: string
+        example: application/json; charset=utf-8
+    CacheControl:
+      description: キャッシュ制御
+      schema:
+        type: string
+        example: 'no-store, no-cache'
+    xContentTypeOptions:
+      description: MIMEタイプのスニッフィング防止
+      schema:
+        type: string
+        example: 'nosniff'
+    xXssProtection:
+      description: XSS攻撃防止
+      schema:
+        type: string
+        example: '1; mode=block'
+    xFrameOptions:
+      description: クリックジャッキング防止
+      schema:
+        type: string
+        example: 'DENY'
+    StrictTransportSecurity: # 追加
+      description: HTTPS通信を強制する
+      schema:
+        type: string
+        example: 'max-age=31536000; includeSubDomains'
+    ContentSecurityPolicy: # 追加
+      description: コンテンツセキュリティポリシー
+      schema:
+        type: string
+        example: "default-src 'self'"
+    ReferrerPolicy: # 追加
+      description: リファラー情報の送信ポリシー
+      schema:
+        type: string
+        example: 'strict-origin-when-cross-origin'
+    XRateLimitLimit: # 追加
+      description: 現在の期間におけるリクエスト数の上限
+      schema:
+        type: integer
+        example: 100
+    XRateLimitRemaining: # 追加
+      description: 現在の期間における残りのリクエスト数
+      schema:
+        type: integer
+        example: 99
+    XRateLimitReset: # 追加
+      description: 現在の期間がリセットされるまでの残り秒数
+      schema:
+        type: integer
+        example: 599
+
+  responses:
+    BadRequest:
+      description: リクエスト不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: 認証エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: 権限エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: レートリミット超過
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: サーバーエラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
   schemas:
-    User:
-      $ref: './openapi/users-schemas.yaml#/User'
-    Error:
-      $ref: './openapi/users-schemas.yaml#/Error'
     Project:
-      $ref: './openapi/projects-schemas.yaml#/Project'
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: 新規開発プロジェクト
+        description:
+          type: string
+          example: 新しいサービスの開発
+        category:
+          type: string
+          example: 開発
+        team:
+          type: string
+          example: Aチーム
+        dueDate:
+          type: string
+          format: date
+          example: 2025-12-31
     ProjectCreateRequest:
-      $ref: './openapi/projects-schemas.yaml#/ProjectCreateRequest'
+      type: object
+      required:
+        - name
+        - description
+        - category
+        - team
+        - dueDate
+      properties:
+        name:
+          type: string
+          maxLength: 256
+        description:
+          type: string
+          maxLength: 1024
+        category:
+          type: string
+          description: 登録されているカテゴリー以外の場合、エラーになります
+        team:
+          type: string
+          description: 登録されているチーム以外の場合、エラーになります
+        dueDate:
+          type: string
+          format: date
     ProjectUpdateRequest:
-      $ref: './openapi/projects-schemas.yaml'
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 256
+        description:
+          type: string
+          maxLength: 1024
+        category:
+          type: string
+          description: 登録されているカテゴリー以外の場合、エラーになります
+        team:
+          type: string
+          description: 登録されているチーム以外の場合、エラーになります
+        dueDate:
+          type: string
+          format: date
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+          enum:
+            - invalid_request
+            - unauthorized
+            - forbidden
+            - not_found
+            - rate_limit_exceeded
+            - internal_error
+        message:
+          type: string
     RealtimeNotification:
       type: object
       properties:
         projectId:
           type: integer
-        projectName:
+        name:
           type: string
-        updatedAt:
+        description:
           type: string
-          format: date-time
-        comment:
+        category:
           type: string
-        assignee:
-          type: string
-        status:
+        team:
           type: string
         dueDate:
           type: string
           format: date
+        updatedAt:
+          type: string
+          format: date-time
+
   securitySchemes:
     JWT:
       type: http
       scheme: bearer
       bearerFormat: JWT
 security:
-  - JWT: []
+  - JWT: [ ]
