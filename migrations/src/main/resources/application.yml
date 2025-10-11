@@ -1,0 +1,19 @@
+spring:
+  flyway:
+    baseline-version: 1.0.0
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/sample?serverTimezone=Asia/Tokyo
+    username: sample_user
+    password: sample_pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+logging:
+  level:
+    # ★Flywayのログレベルを追加★
+    org.flywaydb: INFO
+
+
