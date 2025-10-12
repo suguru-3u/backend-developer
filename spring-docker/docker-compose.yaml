@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  app:
+    # Dockerfileを使ってイメージをビルド（Dockerfileの場所を指定）
+    build: .
+
+    # コンテナ名を指定
+    container_name: spring-boot-dev-app
+
+    # 💡 Devtoolsが変更を検知できるように、ソースコード全体をマウント
+    volumes:
+      - .:/app
+      # Gradleキャッシュのボリューム（推奨）
+      - ~/.gradle:/app/.gradle:delegated
+
+    # ビルドと起動を同時に実行
+    command: ./gradlew bootRun -DisDevtools=true
+
+    ports:
+      - "8080:8080"
+
+    # 💡 ホットリロードのための環境変数設定
+    environment:
+      # Devtoolsのリモートサポートを有効化
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+      # リモート接続用のシークレットキー（任意の文字列に変更可能）
+      - SPRING_DEVTOOLS_REMOTE_SECRET=my-secret
+
+    # コンテナが停止しても自動で再起動しない
+    restart: no
