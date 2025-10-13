@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 class GreetingController {
 
     companion object {
-        private const val template = "Hello, %s!　Yes!!!!!!!!!!"
+        private const val template = "Hello, %s!　Yes!"
     }
     private val counter = AtomicLong()
 

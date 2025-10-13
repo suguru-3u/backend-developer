@@ -1,0 +1,17 @@
+# docker-compose.dev.yaml
+services:
+  app:
+    # Gradleが使えるイメージを直接指定
+    image: gradle:8.7-jdk17-alpine
+    container_name: spring-boot-app-dev
+    working_dir: /app
+    # ソースコードをマウントしてホットリロードを有効化
+    volumes:
+      - .:/app
+      # Gradleのキャッシュをマウントしてビルドを高速化
+      - ~/.gradle:/home/gradle/.gradle
+    # コンテナ内でGradleを実行してアプリを起動
+    command: ./gradlew bootRun
+    ports:
+      - "8080:8080"
+    restart: no

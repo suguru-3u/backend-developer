@@ -1,0 +1,9 @@
+# docker-compose.prod.yaml
+services:
+  app:
+    # Dockerfileを使ってイメージをビルド
+    build: .
+    container_name: spring-boot-app-prod
+    ports:
+      - "8080:8080"
+    restart: always
