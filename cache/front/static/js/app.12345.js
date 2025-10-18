@@ -41,6 +41,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // ページロード時と、キャッシュ制御を確認しやすいように数秒ごとにAPIを呼び出し
     fetchArticle();
 
-    // 強いキャッシュ（max-age=60秒）の動作を確認するために、短い間隔でリロード
-    setInterval(fetchArticle, 5000); // 5秒ごとにAPIを再呼び出し
+    setInterval(fetchArticle, 30000); // 30秒ごとにAPIを再呼び出し
 });
