@@ -1,0 +1,14 @@
+services:
+  access-log:
+    image: nginx:alpine
+    volumes:
+      # Nginxの設定ファイルをマウント
+      # server { ... } や upstream { ... } など、httpブロック内で使用するディレクティブのみ。
+      # Nginxのデフォルトのメイン設定を維持しつつ、機能（SSL、プロキシ、キャッシュなど）を追加できるため。最も柔軟で安全な方法です。
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # ログファイルをマウントしてホスト側で確認できるようにする
+      - ./logs/access.log:/var/log/nginx/access.log:rw
+      # 静的ファイルをマウント
+      - ./html:/usr/share/nginx/html:ro
+    ports:
+      - "80:80"   # HTTPの標準ポート80をホストとコンテナでマッピング
