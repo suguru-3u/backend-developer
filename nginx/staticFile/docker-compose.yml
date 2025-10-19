@@ -2,6 +2,7 @@ services:
   static-file:
     image: nginx:alpine
     volumes:
+      # Nginxのメイン設定を完全に上書きしたい場合にのみ使用されますが、Docker環境では稀です。
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./html:/usr/share/nginx/html:ro
     ports:

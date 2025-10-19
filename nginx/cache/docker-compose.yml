@@ -1,0 +1,13 @@
+services:
+  app1:
+    image: nginxdemos/hello:latest
+
+  cache-proxy:
+    image: nginx:alpine
+    volumes:
+      # Nginx設定ファイルをマウント
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      # キャッシュ保存用ディレクトリをマウント
+      - ./nginxcache:/var/cache/nginx:rw
+    ports:
+      - "80:80" # 今回は8082ポートを使用
