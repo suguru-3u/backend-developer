@@ -27,3 +27,14 @@ NginxはWEBサーバーとして色々なことができることができる。
 NginxもNodeど同じで、イベント駆動型のアーキテクチャを採用している。<br>
 ノンブロックィングI/Oを利用して高いパフォーマンスを実現している。<br>
 ただ、設定ファイルの書き方が独特で最初は慣れるのに時間がかかる。
+
+# 設定ファイルの場所
+- nginx.conf<br>
+nginx.confは、Nginxの全体的な動作を制御するメインの設定ファイルです。<br>
+このファイルは階層的な構造を持ち、http、server、locationなどの主要な設定ブロックで構成されています。 <br>
+通常は/etc/nginx/nginx.confに配置されます。
+
+- default.conf<br>
+default.confは、特定のバーチャルホストの設定を定義するファイルです。<br>
+このファイルはnginx.confからincludeされ、個別のサイトやアプリケーション固有の設定を記述します。<br>
+通常は/etc/nginx/conf.d/default.confに配置されます。
