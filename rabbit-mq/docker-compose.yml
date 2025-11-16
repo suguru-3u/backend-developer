@@ -1,0 +1,18 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management # RabbitMQサーバー本体と、管理用のWebインターフェース（Management Plugin）のイメージをまとめて作成
+    hostname: my-rabbit
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # 標準のAMQPポート (アプリケーションが接続するポート)
+      - "15672:15672" # Management Web UIポート (ブラウザで管理画面にアクセスするポート)
+    environment:
+      # 環境変数でデフォルトのユーザー名とパスワードを設定
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      # データの永続化が不要であればコメントアウトしてOK
+      - rabbitmq_data:/var/lib/rabbitmq/mnesia/
+
+volumes:
+  rabbitmq_data:
