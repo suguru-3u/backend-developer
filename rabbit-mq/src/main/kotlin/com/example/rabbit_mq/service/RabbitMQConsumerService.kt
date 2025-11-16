@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 @Service
 class RabbitMQConsumerService {
     // 'my-queue'という名前のキューのメッセージをリッスン
-    @RabbitListener(queues = ["my-queue"])
+    @RabbitListener(queues = ["my-queue"], containerFactory = "dlqRetryContainerFactory")
     fun listen(message: String) {
         println("Received message from RabbitMQ: $message")
 

@@ -1,9 +1,10 @@
 package com.example.rabbit_mq
 
 import org.springframework.amqp.core.*
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
-import org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler
+import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -82,7 +83,7 @@ class RabbitMQConfig {
      * これにより、アプリケーション側での無限リトライを防ぎ、DLQへメッセージを転送します。
      */
     @Bean
-    fun rabbitListenerContainerFactory(
+    fun dlqRetryContainerFactory(
         connectionFactory: ConnectionFactory,
         rabbitProperties: RabbitProperties
     ): SimpleRabbitListenerContainerFactory {
@@ -90,28 +91,17 @@ class RabbitMQConfig {
         val factory = SimpleRabbitListenerContainerFactory()
         factory.setConnectionFactory(connectionFactory)
 
-        // 1. リトライポリシーの定義
-        val retryTemplate = RetryTemplate()
-
-        // SimpleRetryPolicyのコンストラクタに直接最大試行回数を渡す
-        val maxAttempts = 2
-        val retryPolicy = SimpleRetryPolicy(maxAttempts)
-
-        // リトライ間の待ち時間 (1000ms = 1秒)
-        val backOffPolicy = FixedBackOffPolicy()
-        backOffPolicy.backOffPeriod = 1000L
-
-        retryTemplate.setRetryPolicy(retryPolicy)
-        retryTemplate.setBackOffPolicy(backOffPolicy)
-
-        factory.setRetryTemplate(retryTemplate)
-
-        // 2. エラーハンドラーの設定
-        // リトライ回数を超過した後、メッセージをNack(requeue=false)し、DLQ転送を促す
-        factory.setErrorHandler(ConditionalRejectingErrorHandler())
-
-        // メッセージ処理失敗時にキューに戻さない設定 (DLQ転送の必須条件)
-        factory.setDefaultRequeueRejected(false)
+        factory.setAdviceChain(
+            RetryInterceptorBuilder.stateless()
+                .maxAttempts(5) // 最大リトライ回数
+                .backOffOptions(
+                    1000,   // 初回の待機 1秒
+                    2.0,    // 2倍ずつ増えていく
+                    10000   // 最大待機時間 10秒
+                )
+                .recoverer(RejectAndDontRequeueRecoverer()) // 失敗→DLQへ
+                .build()
+        )
 
         return factory
     }
