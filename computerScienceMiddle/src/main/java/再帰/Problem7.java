@@ -20,12 +20,24 @@ package 再帰;
 
 class Problem7 {
     public static String mergeString(String s1, String s2) {
-        return mergeStringHelper(s1,s2,s1.length() - 1);
+        return mergeStringHelper(s1, s2, s1.length() - 1);
     }
 
     public static String mergeStringHelper(String s1, String s2, int index) {
-        if(index == -1) return "";
-        return mergeStringHelper(s1,s2,index - 1) + s1.charAt(index) + s2.charAt(index);
+        if (index == -1) return "";
+        return mergeStringHelper(s1, s2, index - 1) + s1.charAt(index) + s2.charAt(index);
+    }
+
+    public static String swapPosition(String s) {
+        // 関数を完成させてください
+        return swapPositionHelper(s, 0);
+    }
+
+    public static String swapPositionHelper(String s, int index) {
+        if (s.length() < index - 1) return s.substring(index);
+        String first = s.substring(index, 1);
+        String second = s.substring(index + 1, index + 2);
+        return second + first + swapPositionHelper(s.substring(index), index + 2);
     }
 }
 
