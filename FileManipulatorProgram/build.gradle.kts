@@ -16,7 +16,9 @@ application {
     mainClass.set("org.example.Main")
 }
 
-dependencies {}
+dependencies {
+    implementation("org.commonmark:commonmark:0.24.0")
+}
 
 tasks.test {
     useJUnitPlatform()
