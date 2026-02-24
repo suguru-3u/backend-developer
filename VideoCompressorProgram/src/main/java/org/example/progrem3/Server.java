@@ -1,36 +1,27 @@
 package org.example.progrem3;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Scanner;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 
 public class Server {
     public static void main(String[] args) {
-        try (ServerSocket server = new ServerSocket(8080)) {
+        // 8888番ポートで待ち受け
+        try (DatagramSocket socket = new DatagramSocket(8888)) {
+            System.out.println("サーバー起動：受信を待っています...");
 
-            // クライアントからの接続を待ち受け（accept）
-            Socket socket = server.accept();
-            System.out.println("クライアントとの接続成功！！");
+            // 受信用のバッファ（箱）を用意
+            byte[] buffer = new byte[1024];
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-            // クライアントへのメッセージ投信
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+            // 受信（データが来るまでここで止まります）
+            socket.receive(packet);
 
-            // キーボード入力の受け取り
-            BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+            // 届いたデータを文字列に変換して表示
+            String message = new String(packet.getData(), 0, packet.getLength());
+            System.out.println("受信内容: " + message);
 
-            while (true) {
-                System.out.println("好きなメッセージを入力してください");
-                String input = keyboard.readLine();
-                writer.println(input);
-                System.out.println("メッセージをクライアントに送信");
-                if (input.equals("stop")) break;
-            }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
-
     }
 }
