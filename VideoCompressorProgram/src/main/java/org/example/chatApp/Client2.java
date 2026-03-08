@@ -15,46 +15,62 @@ public class Client2 {
     public static int USERNAME_INDEX = 1;
 
     public static void main(String[] args) {
-        try (DatagramSocket socket = new DatagramSocket()) {
+        try {
+            DatagramSocket socket = new DatagramSocket();
 
-            BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println("あなたの名前を入力してください");
-            String userName = keyboard.readLine();
+            // --- 受信専用のスレッドを起動 ---
+            Thread receiveThread = new Thread(() -> {
+                try {
+                    byte[] buffer = new byte[4096];
+                    while (true) {
+                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                        socket.receive(packet); // ここでデータが届くのをずっと待つ
 
-            System.out.println("送信したいメッセージを送信してください");
-            String chatMessage = keyboard.readLine();
+                        System.out.println("チャットメッセージを受け付けました。");
+                        int userNameLength = Integer.parseInt(new String(packet.getData(), 0, USERNAME_INDEX));
 
-            String sendMessage = String.valueOf(userName.length()) + userName + chatMessage;
-            byte[] buffer = sendMessage.getBytes();
+                        // 届いたデータを文字列に変換して表示
+                        String userName1 = new String(packet.getData(), USERNAME_INDEX, userNameLength);
+                        System.out.println("送信者名: " + userName1);
 
-            // 送り先の設定（自分自身の8888番ポート）
-            InetAddress address = InetAddress.getByName("localhost");
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 8888);
+                        int chatMessageStartIndex = USERNAME_INDEX + userNameLength;
 
-            // 送信！
-            socket.send(packet);
-            System.out.println("メッセージを送信しました。");
+                        // 届いたデータを文字列に変換して表示
+                        String chatMessage1 = new String(packet.getData(), chatMessageStartIndex, packet.getLength() - chatMessageStartIndex);
+                        System.out.println("チャットメッセージ: " + chatMessage1 + "\n");
+                    }
+                } catch (Exception e) {
+                    System.out.println("受信スレッドを終了します。");
+                }
+            });
+            receiveThread.setDaemon(true);
+            receiveThread.start();
 
-            // 受信用のバッファ（箱）を用意
-            byte[] receiveBuffer = new byte[4096];
-            DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+            // --- メインスレッド：送信ループ ---
+            System.out.println("チャット開始（exitで終了）");
+            while (true) {
+                System.out.print("> ");
+                BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+                System.out.println("あなたの名前を入力してください");
+                String userName = keyboard.readLine();
 
-            // 受信（データが来るまでここで止まります）
-            socket.receive(receivePacket);
+                System.out.println("送信したいメッセージを送信してください");
+                String chatMessage = keyboard.readLine();
 
-            System.out.println("チャットメッセージを受け付けました。");
-            int userNameLength = Integer.parseInt(new String(packet.getData(), 0, USERNAME_INDEX));
+                if (chatMessage.equals("exit")) break;
 
-            // 届いたデータを文字列に変換して表示
-            String userName1 = new String(packet.getData(), USERNAME_INDEX, userNameLength);
-            System.out.println("送信者名: " + userName1);
+                String sendMessage = String.valueOf(userName.length()) + userName + chatMessage;
+                byte[] buffer = sendMessage.getBytes();
 
-            int chatMessageStartIndex = USERNAME_INDEX + userNameLength;
+                // 送り先の設定（自分自身の8888番ポート）
+                InetAddress address = InetAddress.getByName("localhost");
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 8888);
 
-            // 届いたデータを文字列に変換して表示
-            String chatMessage1 = new String(packet.getData(), chatMessageStartIndex, packet.getLength() - chatMessageStartIndex);
-            System.out.println("チャットメッセージ: " + chatMessage1);
-
+                // 送信！
+                socket.send(packet);
+                System.out.println("メッセージを送信しました。\n");
+            }
+            socket.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

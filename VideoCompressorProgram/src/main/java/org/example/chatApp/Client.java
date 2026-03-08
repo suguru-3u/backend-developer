@@ -41,7 +41,7 @@ public class Client {
 
                         // 届いたデータを文字列に変換して表示
                         String chatMessage1 = new String(packet.getData(), chatMessageStartIndex, packet.getLength() - chatMessageStartIndex);
-                        System.out.println("チャットメッセージ: " + chatMessage1);
+                        System.out.println("チャットメッセージ: " + chatMessage1 + "\n");
                     }
                 } catch (Exception e) {
                     System.out.println("受信スレッドを終了します。");
@@ -72,7 +72,7 @@ public class Client {
 
                 // 送信！
                 socket.send(packet);
-                System.out.println("メッセージを送信しました。");
+                System.out.println("メッセージを送信しました。\n");
             }
             socket.close();
         } catch (Exception e) {
