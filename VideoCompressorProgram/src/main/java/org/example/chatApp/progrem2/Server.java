@@ -4,6 +4,8 @@ import java.io.DataInputStream;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class Server {
@@ -33,21 +35,34 @@ public class Server {
 
             DataInputStream in = new DataInputStream(sock.getInputStream());
 
-            //データを受信
-            // 1. まずヘッダー（4バイト）を読んでサイズを取得
-            int length = in.read();
+            // ヘッダーの受信
+            byte[] headerBuffer = new byte[32];
+            int read = in.read(headerBuffer);
+            if(read != 32) throw new Exception("不正なヘッダー");
 
-// 2. 指定されたサイズ分だけボディを読み込む
-            byte[] body = new byte[length];
-            in.readFully(body);
+            // ただのバイト配列（byte[]）に、便利な『読み取り用ツール』を被せている
+            ByteBuffer header = ByteBuffer.wrap(headerBuffer);
+            // 0xFFは、負の数を正の数（0〜255）として正しく解釈するためのもの（ビット論理積）
+            int roomNameSize = header.get() & 0xFF;
+            int operation = header.get() & 0xFF;
+            int state = header.get() & 0xFF;
 
-//            int roomNameSize = Integer.parseInt(new String(body, 0, ROOMNAMESIZE));
+            // OpPayloadSize (29バイト分) の解析
+            byte[] payloadSizeField = new byte[29];
+            header.get(payloadSizeField);
+            // 簡易的に最後のバイトをサイズとして取得（仕様に合わせて調整が必要）
+            int payloadSize = payloadSizeField[28] & 0xFF;
 
-            //受信データを読み込んだサイズまで切り詰め
-            String roomName = new String(body);
+            // 2. ボディの受信
+            byte[] roomNameBytes = new byte[roomNameSize];
+            in.read(roomNameBytes);
+            String roomName = new String(roomNameBytes, StandardCharsets.UTF_8);
 
-            //バイト配列を文字列に変換して表示
-            System.out.println("「"+ roomName +"」を受信しました。");
+            byte[] payloadBytes = new byte[payloadSize];
+            in.read(payloadBytes);
+            String payload = new String(payloadBytes, StandardCharsets.UTF_8);
+
+            System.out.println("Received: Room=" + roomName + ", Op=" + operation + ", State=" + state + ", Payload=" + payload);
 
             //受信ストリームの終了
             in.close();
