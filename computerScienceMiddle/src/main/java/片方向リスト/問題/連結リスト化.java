@@ -36,3 +36,6 @@ class Solution {
     }
 }
 
+public class 連結リスト化 {
+}
+
