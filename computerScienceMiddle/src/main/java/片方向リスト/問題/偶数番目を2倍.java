@@ -46,3 +46,23 @@ class Solution {
         return head;
     }
 }
+
+
+class Solution{
+    public static SinglyLinkedListNode<Integer> insertHeadTail(SinglyLinkedListNode<Integer> head, int data){
+        SinglyLinkedListNode<Integer> newNode = new SinglyLinkedListNode<Integer>(data);
+        newNode.next = head;
+
+        if(head == null){
+            return newNode;
+        }
+
+        SinglyLinkedListNode<Integer> current = head;
+        while(current.next != null){
+            current = current.next;
+        }
+        current.next = newNode;
+
+        return newNode;
+    }
+}
