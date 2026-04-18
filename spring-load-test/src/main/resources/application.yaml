@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: spring-load-test
+  datasource:
+    url: jdbc:mysql://localhost:3306/sample
+    username: my_user
+    password: my_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
