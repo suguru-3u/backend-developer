@@ -1,0 +1,31 @@
+# ============================================================
+#  学習用 Elasticsearch + Kibana 環境（ローカル開発専用）
+#  ※ セキュリティを無効化しています。本番環境では使わないこと。
+# ============================================================
+
+services:
+  # --- 検索エンジン本体 ---
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.3
+    container_name: es01
+    environment:
+      - discovery.type=single-node          # 1台構成で動かす
+      - xpack.security.enabled=false         # 学習用にログイン/TLSを無効化
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"         # メモリ割当（1GB）
+    ports:
+      - "9200:9200"                          # REST APIの入り口
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  # --- 可視化・操作ツール ---
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.4.3
+    container_name: kib01
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"                          # ブラウザでアクセスする画面
+    depends_on:
+      - elasticsearch
