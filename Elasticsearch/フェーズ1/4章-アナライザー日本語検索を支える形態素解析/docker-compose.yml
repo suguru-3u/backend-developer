@@ -1,0 +1,32 @@
+# ============================================================
+#  学習用 Elasticsearch(kuromoji入り) + Kibana（ローカル開発専用）
+#  ※ 同じフォルダの Dockerfile を使って、日本語対応イメージをビルドします。
+#  起動: docker compose up -d --build
+# ============================================================
+
+services:
+  # --- 検索エンジン本体（日本語プラグイン入りをビルド） ---
+  elasticsearch:
+    build: .                                 # image: の代わりに、同フォルダのDockerfileでビルド
+    container_name: es01
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false         # 学習用にログイン/TLSを無効化
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  # --- 可視化・操作ツール ---
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.4.3
+    container_name: kib01
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
