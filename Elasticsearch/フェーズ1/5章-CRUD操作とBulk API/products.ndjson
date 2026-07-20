@@ -1,0 +1,12 @@
+{"index":{"_index":"products","_id":"1"}}
+{"name":"軽量ノートパソコン","description":"持ち運びに便利な軽量ノートパソコン。長時間バッテリーで外出先でも安心です。","category":"パソコン","tags":["軽量","モバイル"],"price":98000,"in_stock":true}
+{"index":{"_index":"products","_id":"2"}}
+{"name":"ゲーミングノートパソコン","description":"高性能グラフィックスを搭載したゲーミングノートパソコン。重いゲームも快適に動作します。","category":"パソコン","tags":["高性能","ゲーム"],"price":210000,"in_stock":true}
+{"index":{"_index":"products","_id":"3"}}
+{"name":"ワイヤレスマウス","description":"手にフィットする軽量なワイヤレスマウス。電池持ちがよく静音設計です。","category":"周辺機器","tags":["軽量","ワイヤレス"],"price":3200,"in_stock":true}
+{"index":{"_index":"products","_id":"4"}}
+{"name":"メカニカルキーボード","description":"打ち心地のよいメカニカルキーボード。ゲームにも仕事にも使えます。","category":"周辺機器","tags":["ゲーム"],"price":12800,"in_stock":false}
+{"index":{"_index":"products","_id":"5"}}
+{"name":"4Kモニター","description":"鮮やかな4Kモニター。動画編集や高性能を求める作業に最適です。","category":"周辺機器","tags":["高性能"],"price":45000,"in_stock":true}
+{"index":{"_index":"products","_id":"6"}}
+{"name":"ノートパソコン用スタンド","description":"アルミ製の軽量なノートパソコン用スタンド。姿勢改善に役立ちます。","category":"アクセサリ","tags":["軽量","アルミ"],"price":2980,"in_stock":true}
