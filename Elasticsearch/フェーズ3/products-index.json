@@ -1,0 +1,79 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "analysis": {
+      "char_filter": {
+        "normalize": {
+          "type": "icu_normalizer",
+          "name": "nfkc_cf",
+          "mode": "compose"
+        }
+      },
+      "filter": {
+        "ja_synonym": {
+          "type": "synonym_graph",
+          "lenient": true,
+          "synonyms": [
+            "パソコン, ＰＣ, pc, コンピュータ",
+            "マウス, ポインティングデバイス",
+            "モニター, ディスプレイ, 液晶"
+          ]
+        }
+      },
+      "analyzer": {
+        "ja_index": {
+          "type": "custom",
+          "char_filter": ["normalize"],
+          "tokenizer": "kuromoji_tokenizer",
+          "filter": [
+            "kuromoji_baseform",
+            "kuromoji_part_of_speech",
+            "ja_stop",
+            "kuromoji_number",
+            "kuromoji_stemmer",
+            "lowercase"
+          ]
+        },
+        "ja_search": {
+          "type": "custom",
+          "char_filter": ["normalize"],
+          "tokenizer": "kuromoji_tokenizer",
+          "filter": [
+            "kuromoji_baseform",
+            "kuromoji_part_of_speech",
+            "ja_stop",
+            "kuromoji_number",
+            "kuromoji_stemmer",
+            "lowercase",
+            "ja_synonym"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "false",
+    "properties": {
+      "id": { "type": "integer" },
+      "name": {
+        "type": "text",
+        "analyzer": "ja_index",
+        "search_analyzer": "ja_search",
+        "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "ja_index",
+        "search_analyzer": "ja_search"
+      },
+      "category": { "type": "keyword" },
+      "tags": { "type": "keyword" },
+      "price": { "type": "integer" },
+      "in_stock": { "type": "boolean" },
+      "updated_at": { "type": "date" }
+    }
+  }
+}

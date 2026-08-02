@@ -1,0 +1,34 @@
+{
+  "name": "products-source",
+  "config": {
+    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "tasks.max": "1",
+
+    "database.hostname": "mysql",
+    "database.port": "3306",
+    "database.user": "debezium",
+    "database.password": "dbzpw",
+    "driver.allowPublicKeyRetrieval": "true",
+    "database.server.id": "184054",
+
+    "topic.prefix": "shop",
+    "database.include.list": "shopdb",
+    "table.include.list": "shopdb.products",
+
+    "schema.history.internal.kafka.bootstrap.servers": "kafka:9092",
+    "schema.history.internal.kafka.topic": "schema-history.shop",
+
+    "snapshot.mode": "initial",
+    "include.schema.changes": "false",
+
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter.schemas.enable": "false",
+
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.delete.tombstone.handling.mode": "rewrite",
+    "transforms.unwrap.add.fields": "op,source.ts_ms,source.file,source.pos"
+  }
+}

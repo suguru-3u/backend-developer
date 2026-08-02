@@ -1,0 +1,122 @@
+# ============================================================
+#  学習用 CDCパイプライン環境
+#    Elasticsearch / Kibana / Kafka / Kafka UI / MySQL / Kafka Connect
+#
+#  ※ フェーズ1 第4章の Dockerfile（kuromoji入りESイメージ）と
+#     同じフォルダに置いてください。
+#
+#  起動: docker compose up -d --build
+# ============================================================
+
+services:
+  # ------------------------- 検索エンジン -------------------------
+  elasticsearch:
+    build: .
+    container_name: es01
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.4.3
+    container_name: kib01
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  # ------------------------- Kafka（KRaft） -------------------------
+  kafka:
+    image: apache/kafka:4.1.2
+    container_name: kafka
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://connect:8083
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      - kafka
+
+  # ------------------------- ソースDB（MySQL） -------------------------
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: shopdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppw
+    command:
+      # --- CDCに必要な設定（詳細は第15章 15.2）---
+      - --server-id=1              # レプリケーション上の一意なID
+      - --log-bin=binlog           # binlogを有効化（8.0以降は既定でON）
+      - --binlog-row-image=FULL    # 変更前の全列を記録（before を取るため必須）
+      - --gtid-mode=ON             # GTIDを有効化（推奨。位置管理が楽になる）
+      - --enforce-gtid-consistency=ON
+      - --binlog-expire-logs-seconds=604800   # binlog保持 7日
+    volumes:
+      # 初期スキーマとサンプルデータを流し込む
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpw"]
+      interval: 10s
+      retries: 10
+
+  # ------------------------- Kafka Connect（Debezium入り） -------------------------
+  connect:
+    image: quay.io/debezium/connect:3.5
+    container_name: connect
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: cdc-connect-cluster
+      # Connect自身の状態を保存する内部トピック
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      # 1ノード構成なのでレプリカは1（既定は3で、そのままだと起動に失敗する）
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      # 既定のコンバータ（コネクタ側でも上書き可能）
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+    depends_on:
+      - kafka
+      - mysql

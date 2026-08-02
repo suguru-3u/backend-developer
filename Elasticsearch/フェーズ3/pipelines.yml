@@ -1,0 +1,10 @@
+# ============================================================
+#  Logstash パイプライン定義
+#  ※ pipeline/ 配下の .conf を「1本に連結」させないために、
+#     必ずこのファイルで明示的に分離すること（第18章 18.4 参照）
+# ============================================================
+- pipeline.id: products
+  path.config: "/usr/share/logstash/pipeline/products.conf"
+
+- pipeline.id: categories
+  path.config: "/usr/share/logstash/pipeline/categories.conf"

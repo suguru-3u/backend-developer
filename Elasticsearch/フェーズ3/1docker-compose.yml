@@ -1,0 +1,101 @@
+# ============================================================
+#  学習用 Elasticsearch + Kibana + Kafka（ローカル開発専用）
+#
+#  ※ このファイルは、フェーズ1 第4章で作った Dockerfile
+#     （kuromoji / icu 入りのESイメージ）と同じフォルダに置いてください。
+#
+#  起動:   docker compose up -d --build
+#  確認:   docker compose ps
+#  停止:   docker compose down
+# ============================================================
+
+services:
+  # ------------------------------------------------------------
+  #  検索エンジン（フェーズ1・2から変更なし）
+  # ------------------------------------------------------------
+  elasticsearch:
+    build: .
+    container_name: es01
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.4.3
+    container_name: kib01
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  # ------------------------------------------------------------
+  #  Apache Kafka（KRaftモード = ZooKeeper不要）
+  #    1コンテナで broker と controller を兼任させる学習用構成
+  # ------------------------------------------------------------
+  kafka:
+    image: apache/kafka:4.1.2
+    container_name: kafka
+    ports:
+      # ホストのアプリから使う用（コンテナ内からは kafka:9092）
+      - "29092:29092"
+    environment:
+      # --- KRaft（ZooKeeperなし）の基本設定 ---
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # --- リスナー（接続の受け口）---
+      #  PLAINTEXT      : Dockerネットワーク内から（Connect等はこちら）
+      #  PLAINTEXT_HOST : ホストPCから（localhost:29092）
+      #  CONTROLLER     : KRaftの内部通信用
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # --- 1ノード構成なので、レプリカ数はすべて1にする ---
+      #  （既定値は3。1ノードでは作成に失敗するため必ず上書きが必要）
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+
+      # --- 学習用の待ち時間短縮 ---
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+      # --- 学習用：トピックの自動作成を無効にする ---
+      #  （タイプミスで幽霊トピックができるのを防ぐ。明示的に作る癖をつける）
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+  # ------------------------------------------------------------
+  #  Kafka UI（任意。ブラウザでトピックとメッセージを見るため）
+  #    http://localhost:8080
+  # ------------------------------------------------------------
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      - kafka
+
+# ------------------------------------------------------------
+#  【メモ】Kafkaのデータは永続化していません。
+#  `docker compose down` でトピックの中身は消えます。
+#  学習中は「壊したら作り直す」ほうが都合がよいため、あえてこの構成です。
+#  永続化したい場合は第14章のコラム「Kafkaのデータを残したいとき」を参照。
+# ------------------------------------------------------------

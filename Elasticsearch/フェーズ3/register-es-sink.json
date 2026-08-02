@@ -1,0 +1,36 @@
+{
+  "name": "es-sink",
+  "config": {
+    "connector.class": "io.aiven.kafka.connect.elasticsearch.ElasticsearchSinkConnector",
+    "tasks.max": "1",
+    "topics": "shop.shopdb.products",
+
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "_doc",
+
+    "key.ignore": "false",
+    "schema.ignore": "true",
+    "write.method": "upsert",
+    "behavior.on.null.values": "delete",
+    "behavior.on.malformed.documents": "warn",
+
+    "batch.size": "500",
+    "linger.ms": "1000",
+    "flush.timeout.ms": "60000",
+    "max.retries": "5",
+    "retry.backoff.ms": "1000",
+
+    "errors.tolerance": "all",
+    "errors.log.enable": "true",
+    "errors.deadletterqueue.topic.name": "dlq.es-sink",
+    "errors.deadletterqueue.topic.replication.factor": "1",
+    "errors.deadletterqueue.context.headers.enable": "true",
+
+    "transforms": "extractKey,routeIndex",
+    "transforms.extractKey.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
+    "transforms.extractKey.field": "id",
+    "transforms.routeIndex.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.routeIndex.regex": "shop\\.shopdb\\.products",
+    "transforms.routeIndex.replacement": "products"
+  }
+}
